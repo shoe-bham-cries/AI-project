@@ -1,7 +1,9 @@
 import numpy as n
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as p
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.linear_model import LinearRegression
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense, LSTM, Dropout
 
@@ -19,13 +21,13 @@ training_data = training_data.drop(['Date', 'Adj Close'], axis=1)
 # Now we normalize the training data using MinMaxScaler
 
 scaler = MinMaxScaler()
-training_data = scaler.fit_transform(training_data)
+train_data = scaler.fit_transform(training_data)
 X_train = []
 Y_train = []
 
-for i in range(60, training_data.shape[0]):
-    X_train.append(training_data[i - 60:i])
-    Y_train.append(training_data[i, 0])
+for i in range(60, train_data.shape[0]):
+    X_train.append(train_data[i - 60:i])
+    Y_train.append(train_data[i, 0])
 
 X_train = n.array(X_train)
 Y_train = n.array(Y_train)
@@ -52,5 +54,36 @@ plt.figure()
 plt.plot(epochs, loss, 'b', label='Training loss')
 plt.plot(epochs, val_loss, 'r', label='Validation loss')
 plt.title("Training and Validation Loss")
+plt.legend()
+plt.show()
+
+part_60_days = training_data.tail(60)
+df = part_60_days.append(test_data, ignore_index=True)
+df = df.drop(['Date', 'Adj Close'], axis=1)
+df.head()
+inputs = scaler.transform(df)
+
+X_test = []
+Y_test = []
+for i in range(60, inputs.shape[0]):
+    X_test.append(inputs[i-60:i])
+    Y_test.append(inputs[i, 0])
+
+X_test = np.array(X_test)
+Y_test = np.array(Y_test)
+
+regressor = LinearRegression()
+Y_pred = regressor.predict(X_test)
+
+scale = 1/scaler.scale_[0]
+Y_test = Y_test*scale
+Y_pred = Y_pred*scale
+
+plt.figure(figsize=(14, 5))
+plt.plot(Y_test, color='red', label='Real Bitcoin Price')
+plt.plot(Y_pred, color='green', label='Predicted Bitcoin Price')
+plt.title('Bitcoin Price Prediction using RNN-LSTM')
+plt.xlabel('Time')
+plt.ylabel('Price')
 plt.legend()
 plt.show()
